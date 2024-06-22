@@ -5,21 +5,35 @@ import (
 	"time"
 )
 
-type ServerOpts struct {
+type options struct {
 	Transports []Transport
 }
 
+type Option func(options) options
+
+func WithTransports(transports []Transport) Option {
+	return func(serverOpts options) options {
+		serverOpts.Transports = transports
+		return serverOpts
+	}
+}
+
 type Server struct {
-	ServerOpts
+	options
 	rpcCh  chan RPC
 	quitCh chan struct{}
 }
 
-func NewServer(opts ServerOpts) *Server {
+func NewServer(opts ...Option) *Server {
+	serverOpts := options{}
+	for _, opt := range opts {
+		serverOpts = opt(serverOpts)
+	}
+
 	return &Server{
-		ServerOpts: opts,
-		rpcCh:      make(chan RPC),
-		quitCh:     make(chan struct{}),
+		options: serverOpts,
+		rpcCh:   make(chan RPC),
+		quitCh:  make(chan struct{}),
 	}
 }
 
